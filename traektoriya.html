@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Траектория — калькулятор нормы калорий по месяцам</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #f4f6f5;
+    --surface: #ffffff;
+    --surface-2: #eef2f0;
+    --text: #16211c;
+    --text-muted: #5b6b63;
+    --border: #dde4e0;
+    --accent: #1f8a63;
+    --accent-dark: #146348;
+    --accent-soft: #e3f3ec;
+    --warn: #b5760a;
+    --warn-soft: #fdf1de;
+    --danger: #c23b3b;
+    --danger-soft: #fbe9e9;
+    --shadow: 0 1px 2px rgba(20,30,25,.04), 0 8px 24px rgba(20,30,25,.06);
+    --radius: 16px;
+    --radius-sm: 10px;
+    --font: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  *{ box-sizing: border-box; }
+  html{ scroll-behavior: smooth; }
+  body{
+    margin:0;
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    line-height:1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a{ color: var(--accent-dark); }
+
+  :focus-visible{
+    outline: 3px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  .wrap{
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 0 20px 80px;
+  }
+
+  /* ---------- Header ---------- */
+  header.hero{
+    background: linear-gradient(135deg, var(--accent-dark), var(--accent) 60%, #34a97e);
+    color: #fff;
+    padding: 48px 20px 64px;
+    margin-bottom: -40px;
+  }
+  header.hero .wrap{ padding-bottom: 0; }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-weight:800;
+    font-size: 1.05rem;
+    letter-spacing: .02em;
+    opacity: .92;
+    margin-bottom: 18px;
+  }
+  .brand .dot{ width:10px; height:10px; border-radius:50%; background:#fff; opacity:.85; }
+  header.hero h1{
+    font-size: clamp(1.6rem, 3.2vw, 2.3rem);
+    margin: 0 0 10px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+  header.hero p{
+    margin:0;
+    max-width: 560px;
+    color: rgba(255,255,255,.88);
+    font-size: 1rem;
+  }
+
+  /* ---------- Form card ---------- */
+  main{ position: relative; z-index: 1; }
+
+  .card{
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    padding: 28px;
+    margin-bottom: 24px;
+  }
+
+  form fieldset{
+    border: none;
+    padding: 0;
+    margin: 0 0 26px;
+  }
+  form fieldset:last-of-type{ margin-bottom: 8px; }
+  form legend{
+    font-weight: 700;
+    font-size: 1.02rem;
+    padding: 0 0 14px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  form legend .step-no{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:24px; height:24px;
+    border-radius:50%;
+    background: var(--accent-soft);
+    color: var(--accent-dark);
+    font-size:.8rem;
+    font-weight:800;
+  }
+
+  .grid-2{ display:grid; grid-template-columns: 1fr; gap:16px; }
+  @media (min-width: 620px){
+    .grid-2{ grid-template-columns: 1fr 1fr; }
+    .grid-4{ grid-template-columns: repeat(4, 1fr); }
+  }
+  .grid-4{ display:grid; grid-template-columns: 1fr 1fr; gap:16px; }
+
+  .field label{
+    display:block;
+    font-size: .86rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+  .field input, .field select{
+    width:100%;
+    font-family: inherit;
+    font-size: 1rem;
+    padding: 11px 12px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    transition: border-color .15s ease;
+  }
+  .field input:hover, .field select:hover{ border-color: #b9c6bf; }
+  .field input:focus, .field select:focus{ border-color: var(--accent); outline:none; box-shadow: 0 0 0 3px var(--accent-soft); }
+  .field .hint{ font-size:.78rem; color: var(--text-muted); margin-top:5px; }
+  .field .error{ font-size:.8rem; color: var(--danger); margin-top:5px; display:none; font-weight:600; }
+  .field.invalid input, .field.invalid select{ border-color: var(--danger); }
+  .field.invalid .error{ display:block; }
+
+  .gender-row{ display:flex; gap:10px; }
+  .radio-pill{
+    flex:1;
+    position:relative;
+  }
+  .radio-pill input{ position:absolute; opacity:0; width:100%; height:100%; margin:0; cursor:pointer; }
+  .radio-pill span{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding: 11px 10px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--border);
+    font-weight:600;
+    font-size:.95rem;
+    color: var(--text-muted);
+    transition: all .15s ease;
+  }
+  .radio-pill input:checked + span{
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent-dark);
+  }
+  .radio-pill input:focus-visible + span{ outline: 3px solid var(--accent); outline-offset:2px; }
+
+  .activity-list{ display:grid; gap:10px; }
+  .activity-opt{ position:relative; }
+  .activity-opt input{ position:absolute; opacity:0; width:100%; height:100%; margin:0; cursor:pointer; }
+  .activity-opt .row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--border);
+    transition: all .15s ease;
+  }
+  .activity-opt .row .name{ font-weight:700; font-size:.95rem; }
+  .activity-opt .row .desc{ font-size:.8rem; color: var(--text-muted); }
+  .activity-opt .row .mult{
+    font-size:.78rem;
+    font-weight:700;
+    color: var(--accent-dark);
+    background: var(--accent-soft);
+    padding: 3px 8px;
+    border-radius: 999px;
+    white-space:nowrap;
+  }
+  .activity-opt input:checked + .row{
+    background: var(--accent-soft);
+    border-color: var(--accent);
+  }
+  .activity-opt input:focus-visible + .row{ outline: 3px solid var(--accent); outline-offset:2px; }
+
+  .submit-row{ display:flex; justify-content:flex-end; margin-top: 8px; }
+  button{ font-family: inherit; cursor:pointer; }
+  .btn-primary{
+    background: var(--accent);
+    color:#fff;
+    border:none;
+    font-weight: 700;
+    font-size: 1rem;
+    padding: 14px 26px;
+    border-radius: 999px;
+    box-shadow: 0 6px 18px rgba(31,138,99,.28);
+    transition: transform .12s ease, background .15s ease;
+  }
+  .btn-primary:hover{ background: var(--accent-dark); transform: translateY(-1px); }
+  .btn-primary:active{ transform: translateY(0); }
+
+  .btn-secondary{
+    background: var(--surface);
+    color: var(--text);
+    border: 1.5px solid var(--border);
+    font-weight:700;
+    font-size:.92rem;
+    padding: 10px 18px;
+    border-radius: 999px;
+  }
+  .btn-secondary:hover{ border-color: var(--accent); color: var(--accent-dark); }
+
+  /* ---------- Results ---------- */
+  #results{ display:none; }
+  #results.visible{ display:block; }
+
+  .print-header{ display:none; }
+
+  .section-title{
+    font-size: 1.05rem;
+    font-weight: 800;
+    margin: 0 0 14px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+
+  .banner{
+    display:flex;
+    gap: 12px;
+    align-items:flex-start;
+    padding: 16px 18px;
+    border-radius: var(--radius);
+    margin-bottom: 20px;
+    font-size: .92rem;
+    border: 1.5px solid transparent;
+  }
+  .banner.warn{ background: var(--warn-soft); border-color: #eecf9c; color: #6b4a06; }
+  .banner .icon{ font-size:1.2rem; line-height:1; flex-shrink:0; }
+  .banner strong{ display:block; margin-bottom:2px; }
+
+  .summary-grid{
+    display:grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  @media (min-width: 620px){ .summary-grid{ grid-template-columns: repeat(4, 1fr); } }
+  .stat{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+  }
+  .stat .label{ font-size:.76rem; color: var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:.04em; margin-bottom:6px; }
+  .stat .value{ font-size:1.4rem; font-weight:800; }
+  .stat .value small{ font-size:.7rem; font-weight:700; color: var(--text-muted); }
+
+  .bmi-row{ display:flex; gap:12px; flex-wrap:wrap; margin-bottom: 24px; }
+  .bmi-chip{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background: var(--surface);
+    border:1px solid var(--border);
+    border-radius: 999px;
+    padding: 8px 16px 8px 8px;
+  }
+  .bmi-chip .badge{
+    width:38px; height:38px;
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:.82rem;
+    background: var(--accent-soft); color: var(--accent-dark);
+  }
+  .bmi-chip.cat-under .badge{ background:#e5eefb; color:#2b5ea6; }
+  .bmi-chip.cat-normal .badge{ background: var(--accent-soft); color: var(--accent-dark); }
+  .bmi-chip.cat-over .badge{ background: var(--warn-soft); color: var(--warn); }
+  .bmi-chip.cat-obese .badge{ background: var(--danger-soft); color: var(--danger); }
+  .bmi-chip .txt{ font-size:.84rem; }
+  .bmi-chip .txt .cat{ font-weight:700; }
+  .bmi-chip .txt .lbl{ color: var(--text-muted); font-size:.76rem; }
+
+  .chart-card{ background:var(--surface); border:1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 24px; }
+  .chart-card svg{ width:100%; height:auto; display:block; overflow: visible; }
+  .chart-line{
+    fill:none;
+    stroke: var(--accent);
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 2000;
+    stroke-dashoffset: 2000;
+    animation: draw 1.1s ease forwards;
+  }
+  @keyframes draw{ to{ stroke-dashoffset: 0; } }
+  .chart-area{ fill: url(#chartFade); opacity:0; animation: fadeIn .8s ease .5s forwards; }
+  @keyframes fadeIn{ to{ opacity:1; } }
+  .chart-dot{ fill: #fff; stroke: var(--accent); stroke-width:2.5; }
+  .chart-dot.milestone{ stroke: var(--accent-dark); }
+  .chart-dot:hover, .chart-dot:focus{ stroke-width:3.5; }
+  .chart-tick{ font-size: 11px; fill: var(--text-muted); font-family: var(--font); }
+  .chart-gridline{ stroke: var(--border); stroke-width:1; }
+
+  .month-cards{
+    display:flex;
+    gap:14px;
+    overflow-x:auto;
+    padding: 4px 4px 14px;
+    margin: 0 -4px 24px;
+    scroll-snap-type: x proximity;
+  }
+  .month-card{
+    scroll-snap-align:start;
+    flex: 0 0 190px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    position:relative;
+  }
+  .month-card.aggressive{ border-color: #eecf9c; background: linear-gradient(180deg, var(--warn-soft), var(--surface) 55%); }
+  .month-card .m-no{ font-size:.76rem; font-weight:700; color: var(--text-muted); text-transform:uppercase; letter-spacing:.04em; margin-bottom:8px; }
+  .month-card .m-kcal{ font-size:1.55rem; font-weight:800; line-height:1.1; margin-bottom:2px; }
+  .month-card .m-kcal small{ font-size:.72rem; font-weight:700; color: var(--text-muted); }
+  .month-card .m-weight{ font-size:.82rem; color: var(--text-muted); margin-bottom:10px; }
+  .month-card .m-delta{ font-size:.8rem; font-weight:700; display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:999px; }
+  .m-delta.neg{ background: #fbe9e9; color:#a63333; }
+  .m-delta.pos{ background: var(--accent-soft); color: var(--accent-dark); }
+  .m-delta.zero{ background: var(--surface-2); color: var(--text-muted); }
+  .month-card .m-flag{ margin-top:10px; font-size:.72rem; font-weight:700; color: var(--warn); display:flex; align-items:center; gap:4px; }
+  .month-card .m-clamp{ margin-top:6px; font-size:.7rem; color: var(--text-muted); }
+
+  .tips-grid{ display:grid; grid-template-columns: 1fr; gap:14px; margin-bottom: 24px; }
+  @media (min-width: 620px){ .tips-grid{ grid-template-columns: repeat(2, 1fr); } }
+  .tip{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    display:flex;
+    gap:12px;
+  }
+  .tip .ic{
+    width:38px; height:38px; flex-shrink:0;
+    border-radius: 10px;
+    background: var(--accent-soft);
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.1rem;
+  }
+  .tip h4{ margin:0 0 4px; font-size:.92rem; }
+  .tip p{ margin:0; font-size:.83rem; color: var(--text-muted); }
+  .tips-note{ font-size:.78rem; color: var(--text-muted); margin: -8px 0 24px; }
+
+  details.table-card{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 6px 20px 20px;
+    margin-bottom: 20px;
+  }
+  details.table-card summary{
+    cursor:pointer;
+    list-style:none;
+    padding: 16px 0;
+    font-weight: 800;
+    font-size: 1.02rem;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  details.table-card summary::-webkit-details-marker{ display:none; }
+  details.table-card summary .chev{ transition: transform .2s ease; color: var(--text-muted); font-size:.85rem; }
+  details.table-card[open] summary .chev{ transform: rotate(180deg); }
+
+  .table-scroll{ overflow-x:auto; }
+  table.months-table{ width:100%; border-collapse: collapse; font-size:.84rem; min-width: 640px; }
+  table.months-table th, table.months-table td{ text-align:left; padding: 9px 10px; border-bottom: 1px solid var(--border); white-space:nowrap; }
+  table.months-table th{ color: var(--text-muted); font-weight:700; font-size:.74rem; text-transform:uppercase; letter-spacing:.03em; }
+  table.months-table tr.aggressive td{ background: var(--warn-soft); }
+  table.months-table td.num{ font-variant-numeric: tabular-nums; }
+
+  .export-row{ display:flex; justify-content:center; margin: 28px 0 8px; }
+
+  .disclaimer{ font-size:.78rem; color: var(--text-muted); text-align:center; margin-top: 24px; }
+
+  .visually-hidden{
+    position:absolute !important; width:1px; height:1px; padding:0; margin:-1px;
+    overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;
+  }
+
+  /* ---------- Print ---------- */
+  @media print{
+    body{ background:#fff; }
+    .no-print{ display:none !important; }
+    header.hero{ display:none !important; }
+    .card{ box-shadow:none; border-color:#ccc; }
+    #results{ display:block !important; }
+    .print-header{ display:block !important; margin-bottom: 18px; }
+    .print-header h1{ font-size:1.3rem; margin:0 0 4px; }
+    .print-header .meta{ font-size:.82rem; color:#444; margin-bottom:10px; }
+    .print-header .params{ font-size:.8rem; color:#222; border-top:1px solid #ccc; border-bottom:1px solid #ccc; padding:8px 0; }
+    .chart-line, .chart-area{ animation:none !important; stroke-dashoffset:0 !important; opacity:1 !important; }
+    .month-cards{ display:grid !important; grid-template-columns: repeat(3, 1fr); overflow:visible !important; }
+    .month-card{ break-inside: avoid; flex: auto; }
+    details.table-card table{ display:table !important; }
+    .wrap{ padding: 0 6px; }
+    a[href]:after{ content:''; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero no-print">
+  <div class="wrap">
+    <div class="brand"><span class="dot"></span> ТРАЕКТОРИЯ</div>
+    <h1>Норма калорий, которая меняется вместе с вами</h1>
+    <p>Не одна статичная цифра, а план по месяцам: обмен веществ пересчитывается по мере движения к цели.</p>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="card no-print" aria-labelledby="form-title">
+    <h2 id="form-title" class="visually-hidden">Форма расчёта</h2>
+    <form id="calcForm" novalidate>
+
+      <fieldset>
+        <legend><span class="step-no">1</span> О вас</legend>
+        <div class="grid-2" style="margin-bottom:16px;">
+          <div class="field">
+            <label id="genderLabel">Пол</label>
+            <div class="gender-row" role="radiogroup" aria-labelledby="genderLabel">
+              <label class="radio-pill">
+                <input type="radio" name="gender" value="male" checked>
+                <span>Мужской</span>
+              </label>
+              <label class="radio-pill">
+                <input type="radio" name="gender" value="female">
+                <span>Женский</span>
+              </label>
+            </div>
+          </div>
+          <div class="field">
+            <label for="age">Возраст, лет</label>
+            <input type="number" id="age" name="age" min="14" max="100" step="1" value="30" required aria-describedby="ageError">
+            <div class="error" id="ageError">Введите возраст от 14 до 100 лет</div>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label for="height">Рост, см</label>
+            <input type="number" id="height" name="height" min="100" max="230" step="1" value="175" required aria-describedby="heightError">
+            <div class="error" id="heightError">Введите рост от 100 до 230 см</div>
+          </div>
+          <div class="field">
+            <label for="currentWeight">Текущий вес, кг</label>
+            <input type="number" id="currentWeight" name="currentWeight" min="30" max="300" step="0.1" value="80" required aria-describedby="currentWeightError">
+            <div class="error" id="currentWeightError">Введите вес от 30 до 300 кг</div>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend><span class="step-no">2</span> Активность</legend>
+        <div class="activity-list" role="radiogroup" aria-label="Уровень активности">
+          <label class="activity-opt">
+            <input type="radio" name="activity" value="1.2">
+            <span class="row">
+              <span><span class="name">Минимальная</span><br><span class="desc">сидячая работа</span></span>
+              <span class="mult">×1.2</span>
+            </span>
+          </label>
+          <label class="activity-opt">
+            <input type="radio" name="activity" value="1.375" checked>
+            <span class="row">
+              <span><span class="name">Лёгкая</span><br><span class="desc">1–3 тренировки/нед</span></span>
+              <span class="mult">×1.375</span>
+            </span>
+          </label>
+          <label class="activity-opt">
+            <input type="radio" name="activity" value="1.55">
+            <span class="row">
+              <span><span class="name">Умеренная</span><br><span class="desc">3–5 тренировок/нед</span></span>
+              <span class="mult">×1.55</span>
+            </span>
+          </label>
+          <label class="activity-opt">
+            <input type="radio" name="activity" value="1.725">
+            <span class="row">
+              <span><span class="name">Высокая</span><br><span class="desc">6–7 тренировок/нед</span></span>
+              <span class="mult">×1.725</span>
+            </span>
+          </label>
+          <label class="activity-opt">
+            <input type="radio" name="activity" value="1.9">
+            <span class="row">
+              <span><span class="name">Очень высокая</span><br><span class="desc">физический труд + тренировки</span></span>
+              <span class="mult">×1.9</span>
+            </span>
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend><span class="step-no">3</span> Цель</legend>
+        <div class="grid-2">
+          <div class="field">
+            <label for="targetWeight">Целевой вес, кг</label>
+            <input type="number" id="targetWeight" name="targetWeight" min="30" max="300" step="0.1" value="72" required aria-describedby="targetWeightError">
+            <div class="error" id="targetWeightError">Введите вес от 30 до 300 кг</div>
+          </div>
+          <div class="field">
+            <label for="months">Срок, месяцев</label>
+            <input type="number" id="months" name="months" min="1" max="36" step="1" value="6" required aria-describedby="monthsError">
+            <div class="error" id="monthsError">Введите срок от 1 до 36 месяцев</div>
+          </div>
+        </div>
+      </fieldset>
+
+      <div class="submit-row">
+        <button type="submit" class="btn-primary">Построить траекторию</button>
+      </div>
+    </form>
+  </section>
+
+  <div id="formError" class="banner warn no-print" role="alert" style="display:none;">
+    <span class="icon">⚠️</span>
+    <div><strong>Проверьте форму</strong><span id="formErrorText">Есть некорректные поля.</span></div>
+  </div>
+
+  <section id="results" aria-live="polite">
+
+    <div class="print-header">
+      <h1>Траектория — план по калориям</h1>
+      <div class="meta" id="printMeta"></div>
+      <div class="params" id="printParams"></div>
+    </div>
+
+    <div id="warningBanner"></div>
+
+    <div id="summaryPanel"></div>
+
+    <div id="bmiRow"></div>
+
+    <div class="chart-card" id="chartCard">
+      <h2 class="section-title">Траектория веса</h2>
+      <div id="chartContainer"></div>
+    </div>
+
+    <section aria-labelledby="cardsTitle">
+      <h2 class="section-title" id="cardsTitle">Норма калорий по месяцам</h2>
+      <div class="month-cards" id="monthCards"></div>
+    </section>
+
+    <section aria-labelledby="tipsTitle">
+      <h2 class="section-title" id="tipsTitle">Общие ориентиры по питанию</h2>
+      <div class="tips-grid" id="tipsGrid"></div>
+      <p class="tips-note">Это общие немедицинские ориентиры, не персональный диетический план. При хронических заболеваниях и особых состояниях здоровья проконсультируйтесь с врачом.</p>
+    </section>
+
+    <details class="table-card" id="tableCard">
+      <summary>Полная таблица по месяцам <span class="chev">▾</span></summary>
+      <div class="table-scroll">
+        <table class="months-table" id="monthsTable">
+          <thead>
+            <tr>
+              <th>Месяц</th>
+              <th>Ср. вес, кг</th>
+              <th>BMR, ккал</th>
+              <th>TDEE, ккал</th>
+              <th>Δ веса/мес, кг</th>
+              <th>Деф./проф., ккал/д</th>
+              <th>Норма, ккал/д</th>
+              <th>Вес на конец, кг</th>
+              <th>Темп/нед, %</th>
+              <th>Отметка</th>
+            </tr>
+          </thead>
+          <tbody id="monthsTableBody"></tbody>
+        </table>
+      </div>
+    </details>
+
+    <div class="export-row no-print">
+      <button type="button" class="btn-secondary" id="exportBtn">🖨️ Скачать / Печать · PDF</button>
+    </div>
+
+    <p class="disclaimer">Расчёты основаны на формуле Миффлина–Сан Жеора и носят справочный характер. Не являются медицинской рекомендацией.</p>
+  </section>
+
+</main>
+
+<script>
+(function(){
+  'use strict';
+
+  var KCAL_PER_KG = 7700;
+  var DAYS_PER_MONTH = 30.44;
+  var MIN_KCAL = { male: 1500, female: 1200 };
+  var ACTIVITY_LABELS = {
+    '1.2': 'Минимальная (×1.2)',
+    '1.375': 'Лёгкая (×1.375)',
+    '1.55': 'Умеренная (×1.55)',
+    '1.725': 'Высокая (×1.725)',
+    '1.9': 'Очень высокая (×1.9)'
+  };
+
+  var form = document.getElementById('calcForm');
+  var results = document.getElementById('results');
+  var formErrorBox = document.getElementById('formError');
+  var formErrorText = document.getElementById('formErrorText');
+
+  function fmt(n, digits){
+    if (digits === undefined) digits = 0;
+    if (!isFinite(n)) return '—';
+    return n.toLocaleString('ru-RU', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  }
+  function signFmt(n, digits){
+    var s = n > 0 ? '+' : '';
+    return s + fmt(n, digits);
+  }
+
+  function calcBMR(gender, weightKg, heightCm, age){
+    var base = 10 * weightKg + 6.25 * heightCm - 5 * age;
+    return gender === 'male' ? base + 5 : base - 161;
+  }
+
+  function bmiCategory(bmi){
+    if (bmi < 18.5) return { key:'under', label:'Недостаточный вес' };
+    if (bmi < 25) return { key:'normal', label:'Норма' };
+    if (bmi < 30) return { key:'over', label:'Избыточный вес' };
+    return { key:'obese', label:'Ожирение' };
+  }
+
+  // ---------- Validation ----------
+  var FIELD_RULES = [
+    { id:'age', min:14, max:100 },
+    { id:'height', min:100, max:230 },
+    { id:'currentWeight', min:30, max:300 },
+    { id:'targetWeight', min:30, max:300 },
+    { id:'months', min:1, max:36 }
+  ];
+
+  function clearErrors(){
+    FIELD_RULES.forEach(function(r){
+      document.getElementById(r.id).closest('.field').classList.remove('invalid');
+    });
+    formErrorBox.style.display = 'none';
+  }
+
+  function validate(){
+    var valid = true;
+    var firstInvalid = null;
+    FIELD_RULES.forEach(function(r){
+      var el = document.getElementById(r.id);
+      var field = el.closest('.field');
+      var val = parseFloat(el.value);
+      var ok = !isNaN(val) && val >= r.min && val <= r.max;
+      if (!ok){
+        field.classList.add('invalid');
+        valid = false;
+        if (!firstInvalid) firstInvalid = el;
+      } else {
+        field.classList.remove('invalid');
+      }
+    });
+    if (!valid){
+      formErrorText.textContent = 'Заполните поля в указанных диапазонах, отмеченные красным.';
+      formErrorBox.style.display = 'flex';
+      if (firstInvalid) firstInvalid.focus();
+    } else {
+      formErrorBox.style.display = 'none';
+    }
+    return valid;
+  }
+
+  // ---------- Core calculation ----------
+  function buildTrajectory(input){
+    var months = input.months;
+    var step = (input.targetWeight - input.currentWeight) / months;
+    var minKcal = MIN_KCAL[input.gender];
+    var data = [];
+    for (var i = 1; i <= months; i++){
+      var startW = input.currentWeight + step * (i - 1);
+      var endW = input.currentWeight + step * i;
+      var avgW = (startW + endW) / 2;
+      var bmr = calcBMR(input.gender, avgW, input.height, input.age);
+      var tdee = bmr * input.activity;
+      var dailyDelta = (step * KCAL_PER_KG) / DAYS_PER_MONTH;
+      var rawNorm = tdee + dailyDelta;
+      var clamped = rawNorm < minKcal;
+      var norm = clamped ? minKcal : rawNorm;
+      var weeklyChange = step * (7 / DAYS_PER_MONTH);
+      var weeklyRatePct = avgW > 0 ? Math.abs(weeklyChange) / avgW * 100 : 0;
+      var aggressive = weeklyRatePct > 1 || Math.abs(dailyDelta) > 1000;
+      data.push({
+        index: i, startW: startW, endW: endW, avgW: avgW,
+        bmr: bmr, tdee: tdee, step: step, dailyDelta: dailyDelta,
+        rawNorm: rawNorm, norm: norm, clamped: clamped,
+        weeklyRatePct: weeklyRatePct, aggressive: aggressive
+      });
+    }
+    return data;
+  }
+
+  // ---------- Renderers (each isolated so one failure doesn't kill the rest) ----------
+  function renderWarningBanner(months){
+    var el = document.getElementById('warningBanner');
+    var aggressiveMonths = months.filter(function(m){ return m.aggressive; });
+    if (aggressiveMonths.length === 0){ el.innerHTML = ''; return; }
+    var list = aggressiveMonths.map(function(m){ return m.index; }).join(', ');
+    el.innerHTML =
+      '<div class="banner warn">' +
+        '<span class="icon">⚠️</span>' +
+        '<div><strong>Слишком агрессивный темп</strong>' +
+        'Месяц(ы) ' + list + ' предполагают темп изменения веса выше ~1% в неделю или суточный дефицит/профицит больше 1000 ккал. ' +
+        'Рекомендуем увеличить срок или смягчить цель, а перед началом плана — обратиться к врачу.</div>' +
+      '</div>';
+  }
+
+  function renderSummary(input, bmrNow, tdeeNow, months){
+    var el = document.getElementById('summaryPanel');
+    var totalChange = input.targetWeight - input.currentWeight;
+    var totalWeeks = (input.months * DAYS_PER_MONTH) / 7;
+    var avgWeeklyPace = totalChange / totalWeeks;
+    el.innerHTML =
+      '<div class="summary-grid">' +
+        stat('BMR сейчас', fmt(bmrNow) + '<small> ккал/сут</small>') +
+        stat('Норма поддержания', fmt(tdeeNow) + '<small> ккал/сут</small>') +
+        stat('Изменение веса', signFmt(totalChange, 1) + '<small> кг</small>') +
+        stat('Темп в неделю', signFmt(avgWeeklyPace, 2) + '<small> кг/нед</small>') +
+      '</div>';
+    function stat(label, value){
+      return '<div class="stat"><div class="label">' + label + '</div><div class="value">' + value + '</div></div>';
+    }
+  }
+
+  function renderBMI(input){
+    var el = document.getElementById('bmiRow');
+    var hM = input.height / 100;
+    var bmiStart = input.currentWeight / (hM * hM);
+    var bmiTarget = input.targetWeight / (hM * hM);
+    var catStart = bmiCategory(bmiStart);
+    var catTarget = bmiCategory(bmiTarget);
+    el.innerHTML =
+      '<div class="bmi-row">' +
+        chip('Старт', bmiStart, catStart) +
+        chip('Цель', bmiTarget, catTarget) +
+      '</div>';
+    function chip(label, val, cat){
+      return '<div class="bmi-chip cat-' + cat.key + '">' +
+        '<span class="badge">' + fmt(val, 1) + '</span>' +
+        '<span class="txt"><span class="cat">' + cat.label + '</span><br><span class="lbl">ИМТ · ' + label + '</span></span>' +
+      '</div>';
+    }
+  }
+
+  function renderChart(input, months){
+    var container = document.getElementById('chartContainer');
+    var W = 1000, H = 320, padL = 46, padR = 20, padT = 20, padB = 34;
+    var innerW = W - padL - padR, innerH = H - padT - padB;
+
+    var weights = [input.currentWeight].concat(months.map(function(m){ return m.endW; }));
+    var minW = Math.min.apply(null, weights);
+    var maxW = Math.max.apply(null, weights);
+    if (minW === maxW){ minW -= 1; maxW += 1; }
+    var pad = (maxW - minW) * 0.15;
+    minW -= pad; maxW += pad;
+
+    var n = weights.length;
+    function x(i){ return padL + (innerW * i) / (n - 1); }
+    function y(w){ return padT + innerH - ((w - minW) / (maxW - minW)) * innerH; }
+
+    var pts = weights.map(function(w, i){ return [x(i), y(w)]; });
+    var linePath = pts.map(function(p, i){ return (i === 0 ? 'M' : 'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join(' ');
+    var areaPath = linePath + ' L' + x(n-1).toFixed(1) + ',' + (padT+innerH) + ' L' + x(0).toFixed(1) + ',' + (padT+innerH) + ' Z';
+
+    // gridlines (4 horizontal)
+    var gridLines = '';
+    var gridLabels = '';
+    var steps = 4;
+    for (var g = 0; g <= steps; g++){
+      var gw = minW + ((maxW - minW) * g) / steps;
+      var gy = y(gw);
+      gridLines += '<line class="chart-gridline" x1="' + padL + '" x2="' + (W-padR) + '" y1="' + gy.toFixed(1) + '" y2="' + gy.toFixed(1) + '"/>';
+      gridLabels += '<text class="chart-tick" x="4" y="' + (gy+4).toFixed(1) + '">' + fmt(gw,1) + '</text>';
+    }
+
+    // x ticks: show start, end, and evenly spaced ones (cap ~7 labels)
+    var maxLabels = 7;
+    var labelEvery = Math.max(1, Math.ceil((n-1) / maxLabels));
+    var xTicks = '';
+    for (var i = 0; i < n; i++){
+      if (i % labelEvery === 0 || i === n - 1){
+        xTicks += '<text class="chart-tick" x="' + x(i).toFixed(1) + '" y="' + (H-8) + '" text-anchor="middle">' + i + '</text>';
+      }
+    }
+
+    var dots = pts.map(function(p, i){
+      var isMilestone = (i === 0 || i === n - 1);
+      var w = weights[i];
+      var titleTxt = (i === 0 ? 'Старт' : 'Месяц ' + i) + ': ' + fmt(w,1) + ' кг';
+      return '<circle class="chart-dot' + (isMilestone ? ' milestone' : '') + '" cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="' + (isMilestone ? 6 : 4.5) + '" tabindex="0"><title>' + titleTxt + '</title></circle>';
+    }).join('');
+
+    var svg =
+      '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="График изменения веса по месяцам от ' + fmt(input.currentWeight,1) + ' до ' + fmt(input.targetWeight,1) + ' кг">' +
+        '<defs><linearGradient id="chartFade" x1="0" y1="0" x2="0" y2="1">' +
+          '<stop offset="0%" stop-color="var(--accent)" stop-opacity="0.25"/>' +
+          '<stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>' +
+        '</linearGradient></defs>' +
+        gridLines + gridLabels + xTicks +
+        '<path class="chart-area" d="' + areaPath + '"/>' +
+        '<path class="chart-line" d="' + linePath + '"/>' +
+        dots +
+      '</svg>';
+
+    container.innerHTML = svg;
+  }
+
+  function renderMonthCards(input, months, tdeeNow){
+    var el = document.getElementById('monthCards');
+    el.innerHTML = months.map(function(m){
+      var delta = m.norm - tdeeNow;
+      var deltaClass = delta > 5 ? 'pos' : (delta < -5 ? 'neg' : 'zero');
+      return '<div class="month-card' + (m.aggressive ? ' aggressive' : '') + '">' +
+        '<div class="m-no">Месяц ' + m.index + '</div>' +
+        '<div class="m-kcal">' + fmt(m.norm) + '<small> ккал/д</small></div>' +
+        '<div class="m-weight">к концу: ' + fmt(m.endW,1) + ' кг</div>' +
+        '<span class="m-delta ' + deltaClass + '">' + signFmt(delta) + ' к поддержанию</span>' +
+        (m.clamped ? '<div class="m-clamp">Зафиксировано на безопасном минимуме</div>' : '') +
+        (m.aggressive ? '<div class="m-flag">⚠️ агрессивный темп</div>' : '') +
+      '</div>';
+    }).join('');
+  }
+
+  function renderTips(input, months){
+    var el = document.getElementById('tipsGrid');
+    var waterMin = input.currentWeight * 30;
+    var waterMax = input.currentWeight * 35;
+
+    var totalChange = input.targetWeight - input.currentWeight;
+    var proteinRange;
+    if (totalChange < -0.5){ proteinRange = [1.6, 2.2]; }
+    else if (totalChange > 0.5){ proteinRange = [1.6, 2.0]; }
+    else { proteinRange = [1.2, 1.6]; }
+    var proteinMin = input.targetWeight * proteinRange[0];
+    var proteinMax = input.targetWeight * proteinRange[1];
+
+    var tips = [
+      { ic:'💧', title:'Вода', text: fmt(waterMin/1000,1) + '–' + fmt(waterMax/1000,1) + ' л в день (≈30–35 мл/кг от текущего веса).' },
+      { ic:'🥩', title:'Белок', text: fmt(proteinMin) + '–' + fmt(proteinMax) + ' г в день от целевого веса — помогает сохранить мышечную массу.' },
+      { ic:'🌾', title:'Клетчатка', text: '25–30 г в день — общий ориентир, не зависит от веса.' },
+      { ic:'🍽️', title:'Режим питания', text: '3–5 приёмов пищи через примерно равные промежутки, без длинных голодных окон и пропуска завтрака.' }
+    ];
+    el.innerHTML = tips.map(function(t){
+      return '<div class="tip"><div class="ic">' + t.ic + '</div><div><h4>' + t.title + '</h4><p>' + t.text + '</p></div></div>';
+    }).join('');
+  }
+
+  function renderTable(months){
+    var body = document.getElementById('monthsTableBody');
+    body.innerHTML = months.map(function(m){
+      return '<tr class="' + (m.aggressive ? 'aggressive' : '') + '">' +
+        '<td class="num">' + m.index + '</td>' +
+        '<td class="num">' + fmt(m.avgW,1) + '</td>' +
+        '<td class="num">' + fmt(m.bmr) + '</td>' +
+        '<td class="num">' + fmt(m.tdee) + '</td>' +
+        '<td class="num">' + signFmt(m.step,2) + '</td>' +
+        '<td class="num">' + signFmt(m.dailyDelta) + '</td>' +
+        '<td class="num">' + fmt(m.norm) + (m.clamped ? ' *' : '') + '</td>' +
+        '<td class="num">' + fmt(m.endW,1) + '</td>' +
+        '<td class="num">' + fmt(m.weeklyRatePct,2) + '</td>' +
+        '<td>' + (m.aggressive ? '⚠️ агрессивно' : '—') + '</td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  function renderPrintHeader(input){
+    var genderLabel = input.gender === 'male' ? 'мужской' : 'женский';
+    document.getElementById('printMeta').textContent = 'Сформировано: ' + new Date().toLocaleDateString('ru-RU', { day:'2-digit', month:'long', year:'numeric' });
+    document.getElementById('printParams').textContent =
+      'Пол: ' + genderLabel + ' · Возраст: ' + input.age + ' лет · Рост: ' + input.height + ' см · ' +
+      'Вес: ' + fmt(input.currentWeight,1) + ' → ' + fmt(input.targetWeight,1) + ' кг · ' +
+      'Срок: ' + input.months + ' мес. · Активность: ' + (ACTIVITY_LABELS[String(input.activity)] || input.activity);
+  }
+
+  function safeRender(fn, label){
+    try { fn(); }
+    catch (e){
+      console.error('Ошибка отрисовки блока "' + label + '":', e);
+    }
+  }
+
+  form.addEventListener('submit', function(ev){
+    ev.preventDefault();
+    clearErrors();
+    if (!validate()) return;
+
+    var input = {
+      gender: form.gender.value,
+      age: parseFloat(document.getElementById('age').value),
+      height: parseFloat(document.getElementById('height').value),
+      currentWeight: parseFloat(document.getElementById('currentWeight').value),
+      activity: parseFloat(form.activity.value),
+      targetWeight: parseFloat(document.getElementById('targetWeight').value),
+      months: parseInt(document.getElementById('months').value, 10)
+    };
+
+    var months, bmrNow, tdeeNow;
+    try {
+      bmrNow = calcBMR(input.gender, input.currentWeight, input.height, input.age);
+      tdeeNow = bmrNow * input.activity;
+      months = buildTrajectory(input);
+    } catch (e){
+      console.error('Ошибка основного расчёта:', e);
+      formErrorText.textContent = 'Не удалось выполнить расчёт. Проверьте введённые данные.';
+      formErrorBox.style.display = 'flex';
+      return;
+    }
+
+    safeRender(function(){ renderPrintHeader(input); }, 'печатная шапка');
+    safeRender(function(){ renderWarningBanner(months); }, 'предупреждение');
+    safeRender(function(){ renderSummary(input, bmrNow, tdeeNow, months); }, 'сводка');
+    safeRender(function(){ renderBMI(input); }, 'ИМТ');
+    safeRender(function(){ renderChart(input, months); }, 'график');
+    safeRender(function(){ renderMonthCards(input, months, tdeeNow); }, 'карточки месяцев');
+    safeRender(function(){ renderTips(input, months); }, 'советы по питанию');
+    safeRender(function(){ renderTable(months); }, 'таблица');
+
+    results.classList.add('visible');
+    results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  // ---------- Export / Print ----------
+  var exportBtn = document.getElementById('exportBtn');
+  var tableCard = document.getElementById('tableCard');
+  var wasTableOpen = false;
+
+  exportBtn.addEventListener('click', function(){
+    window.print();
+  });
+
+  window.addEventListener('beforeprint', function(){
+    wasTableOpen = tableCard.hasAttribute('open');
+    tableCard.setAttribute('open', '');
+  });
+  window.addEventListener('afterprint', function(){
+    if (!wasTableOpen) tableCard.removeAttribute('open');
+  });
+
+})();
+</script>
+
+</body>
+</html>
